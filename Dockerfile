@@ -16,7 +16,7 @@ COPY . .
 RUN mkdir -p /app/seed_wiki && cp -r /app/wiki/* /app/seed_wiki/ 2>/dev/null; true
 
 # Volume for persistent wiki content
-VOLUME /app/wiki
+VOLUME /volume1
 
 # Start
 CMD ["python", "-c", "from wiki_app import main; main()"]

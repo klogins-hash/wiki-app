@@ -25,7 +25,7 @@ from wiki_render import render_markdown, strip_markdown
 
 # ── config ─────────────────────────────────────────────────────
 
-WIKI_DIR = Path(__file__).parent / "wiki"
+WIKI_DIR = Path(os.environ.get("WIKI_VOLUME", Path(__file__).parent / "wiki"))
 SEED_WIKI_DIR = Path(__file__).parent / "seed_wiki"
 STATIC_DIR = Path(__file__).parent / "static"
 TEMPLATES_DIR = Path(__file__).parent / "templates"
