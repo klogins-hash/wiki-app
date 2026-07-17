@@ -1,0 +1,7 @@
+.venv
+.git
+wiki/.git
+__pycache__
+*.pyc
+.DS_Store
+.env

@@ -5,6 +5,7 @@ Web UI is read-only for humans; all writes go through the API.
 """
 
 import os
+import shutil
 import sys
 from pathlib import Path
 from datetime import datetime, timezone
@@ -25,6 +26,7 @@ from wiki_render import render_markdown, strip_markdown
 # ── config ─────────────────────────────────────────────────────
 
 WIKI_DIR = Path(__file__).parent / "wiki"
+SEED_WIKI_DIR = Path(__file__).parent / "seed_wiki"
 STATIC_DIR = Path(__file__).parent / "static"
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
@@ -396,7 +398,20 @@ def main():
     import uvicorn
     
     port = int(os.environ.get("PORT", 8080))
-    host = os.environ.get("HOST", "127.0.0.1")
+    host = os.environ.get("HOST", "0.0.0.0")
+    
+    # ── seed wiki content on fresh volume ─────────────────────
+    if not any(WIKI_DIR.iterdir()):
+        print("🌱 Seeding wiki content from seed_wiki/...")
+        for item in SEED_WIKI_DIR.iterdir():
+            if item.is_file():
+                shutil.copy2(item, WIKI_DIR / item.name)
+    
+    # wiki repo init (handles git init on fresh dirs)
+    global wiki
+    wiki = WikiRepo(WIKI_DIR)
+    
+    pages = wiki.list_pages()
     
     print(f"╔══════════════════════════════════════════╗")
     print(f"║     AI Wiki — Agent-First Wiki           ║")
@@ -405,7 +420,8 @@ def main():
     print(f"║  API:     http://{host}:{port}/api/       ║")
     print(f"║  Graph:   http://{host}:{port}/api/graph  ║")
     print(f"║━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━║")
-    print(f"║  Pages: {wiki.list_pages().__len__()}  |  Git: {WIKI_DIR}/.git  ║")
+    print(f"║  Pages: {len(pages) if pages else 0}  |  "
+          f"Git: {WIKI_DIR}/.git  ║")
     print(f"╚══════════════════════════════════════════╝")
     
     uvicorn.run(app, host=host, port=port, log_level="info")
