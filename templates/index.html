@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}AI Wiki — {{ title }}{% endblock %}
+
+{% block sidebar_pages %}
+{% for p in pages %}
+<a href="/{{ p.path }}">{{ p.path }}</a>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="stat-cards">
+    <div class="stat-card">
+        <div class="number">{{ stats.total_pages }}</div>
+        <div class="label">Pages</div>
+    </div>
+    <div class="stat-card">
+        <div class="number">{{ stats.total_nodes }}</div>
+        <div class="label">Graph Nodes</div>
+    </div>
+    <div class="stat-card">
+        <div class="number">{{ stats.total_links }}</div>
+        <div class="label">Wiki Links</div>
+    </div>
+    <div class="stat-card">
+        <div class="number">{{ stats.broken_links }}</div>
+        <div class="label">Broken Links</div>
+    </div>
+</div>
+
+<input type="text" class="search-box" id="search" placeholder="Search pages..." oninput="filterPages(this.value)">
+
+{% if pages %}
+<ul class="page-list" id="page-list">
+{% for p in pages %}
+<li>
+    <a href="/{{ p.path }}">{{ p.title }}</a>
+    <div class="meta">
+        {{ p.path }}
+        {% if p.last_modified %} · {{ p.last_modified[:10] }}{% endif %}
+        · {{ p.word_count }} words
+    </div>
+</li>
+{% endfor %}
+</ul>
+{% else %}
+<div class="empty-state">
+    <h2>🌱 Empty Wiki</h2>
+    <p>No pages yet. An AI agent can create them via the API.</p>
+    <p style="margin-top: 8px; font-size: 13px;">
+        <code>PUT /api/pages/my-page</code> with <code>{ "content": "# Hello" }</code>
+    </p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterPages(query) {
+    const items = document.querySelectorAll('#page-list li');
+    const q = query.toLowerCase();
+    items.forEach(li => {
+        const text = li.textContent.toLowerCase();
+        li.style.display = text.includes(q) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

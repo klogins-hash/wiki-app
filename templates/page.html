@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}AI Wiki — {{ title }}{% endblock %}
+
+{% block sidebar_pages %}
+<a href="/">← All Pages</a>
+<h3>Links</h3>
+{% for link in links %}
+<a href="/{{ link.target }}">{{ link.display }}</a>
+{% endfor %}
+{% if backlinks %}
+<h3>Backlinks</h3>
+{% for bl in backlinks %}
+<a href="/{{ bl }}">{{ bl }}</a>
+{% endfor %}
+{% endif %}
+<h3>Meta</h3>
+<a href="/{{ path }}/history">📋 History ({{ history|length }} versions)</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    <button class="raw-toggle" onclick="toggleRaw()">📄 Show raw markdown</button>
+    <pre class="raw-content" id="raw-content">{{ raw_content }}</pre>
+    {{ content|safe }}
+</div>
+
+{% if backlinks %}
+<div class="meta-section">
+    <h3>🔗 Backlinks ({{ backlinks|length }})</h3>
+    <div class="backlinks-list">
+    {% for bl in backlinks %}
+        <a href="/{{ bl }}">{{ bl }}</a>
+    {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if history %}
+<div class="meta-section">
+    <h3>📋 Recent History</h3>
+    <div class="history-preview">
+    {% for h in history[:5] %}
+        <a href="/{{ path }}/history" title="{{ h.message | e }}">
+            {{ h.short_sha }}
+            <span class="commit-meta">{{ h.author }} · {{ h.date[:16] }}</span>
+        </a>
+    {% endfor %}
+    {% if history|length > 5 %}
+        <a href="/{{ path }}/history">+{{ history|length - 5 }} more →</a>
+    {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% if local_graph and local_graph.nodes|length > 1 %}
+<div class="meta-section">
+    <h3>🌐 Local Graph ({{ local_graph.nodes|length }} nodes, {{ local_graph.edges|length }} edges)</h3>
+    <div class="graph-container" id="local-graph"></div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+function toggleRaw() {
+    const el = document.getElementById('raw-content');
+    el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+// Simple D3 force-directed graph for local graph
+{% if local_graph and local_graph.nodes|length > 1 %}
+const graphData = {{ local_graph|tojson|safe }};
+
+const svg = d3.select("#local-graph")
+    .append("svg")
+    .attr("width", "100%")
+    .attr("height", "200");
+
+const width = svg.node().getBoundingClientRect().width;
+const height = 200;
+
+const simulation = d3.forceSimulation(graphData.nodes)
+    .force("link", d3.forceLink(graphData.edges).id(d => d.id).distance(80))
+    .force("charge", d3.forceManyBody().strength(-120))
+    .force("center", d3.forceCenter(width / 2, height / 2));
+
+const link = svg.append("g")
+    .selectAll("line")
+    .data(graphData.edges)
+    .join("line")
+    .attr("stroke", "#30363d")
+    .attr("stroke-width", 1.5)
+    .attr("stroke-opacity", 0.6);
+
+const node = svg.append("g")
+    .selectAll("circle")
+    .data(graphData.nodes)
+    .join("circle")
+    .attr("r", d => d.id === "{{ path }}" ? 8 : 5)
+    .attr("fill", d => {
+        if (d.id === "{{ path }}") return "#58a6ff";
+        if (d.page_exists) return "#bc8cff";
+        return "#6e7681";
+    })
+    .attr("stroke", "#0d1117")
+    .attr("stroke-width", 2)
+    .style("cursor", "pointer")
+    .on("click", (event, d) => {
+        if (d.page_exists) window.location.href = "/" + d.id;
+    });
+
+node.append("title")
+    .text(d => d.title || d.id);
+
+simulation.on("tick", () => {
+    link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+    node
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y);
+});
+{% endif %}
+</script>
+{% endblock %}

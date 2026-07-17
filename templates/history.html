@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}AI Wiki — {{ title }} — History{% endblock %}
+
+{% block sidebar_pages %}
+<a href="/">← All Pages</a>
+<a href="/{{ path }}">← {{ title }}</a>
+{% endblock %}
+
+{% block content %}
+<h1>📋 History: {{ title }}</h1>
+<p style="color: var(--text-dim); margin-bottom: 24px;">
+    <code>{{ path }}</code> · {{ history|length }} versions
+</p>
+
+<table class="history-table">
+    <thead>
+        <tr>
+            <th>Commit</th>
+            <th>Date</th>
+            <th>Author</th>
+            <th>Message</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for h in history %}
+        <tr>
+            <td><span class="sha">{{ h.short_sha }}</span></td>
+            <td>{{ h.date[:19].replace('T', ' ') }}</td>
+            <td><span class="author {% if 'ai' in h.author.lower() %}ai-agent{% endif %}">{{ h.author }}</span></td>
+            <td>{{ h.summary }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% if not history %}
+<div class="empty-state">
+    <h2>No History</h2>
+    <p>This page doesn't have any version history yet.</p>
+</div>
+{% endif %}
+{% endblock %}
